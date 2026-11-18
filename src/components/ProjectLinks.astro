@@ -1,0 +1,18 @@
+---
+import { projectLinks } from '../lib/links';
+
+interface Props {
+  project: { data: { live: boolean; repo?: string; demoPath?: string; siteUrl?: string } };
+}
+const links = projectLinks(Astro.props.project.data);
+---
+
+{
+  (links.demo || links.site || links.repo) && (
+    <p class="links">
+      {links.demo && <a class="button" href={links.demo}>Open the demo</a>}
+      {links.site && <a class="button" href={links.site} rel="noopener">Visit the site</a>}
+      {links.repo && <a href={links.repo} rel="noopener">Code on GitHub</a>}
+    </p>
+  )
+}

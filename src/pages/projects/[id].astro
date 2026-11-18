@@ -1,0 +1,142 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Flow from '../../components/Flow.astro';
+import ProjectLinks from '../../components/ProjectLinks.astro';
+import { href } from '../../lib/links';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects', (p) => !p.data.hidden);
+  return projects.map((project) => ({
+    params: { id: project.id },
+    props: {
+      project,
+      parent: projects.find((p) => p.id === project.data.parent) ?? null,
+    },
+  }));
+}
+
+const { project, parent } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+const back = parent ? { url: `/projects/${parent.id}/`, label: parent.data.title } : { url: '/', label: 'Projects' };
+---
+
+<Base title={data.title} description={data.tagline} current="work">
+  <article class="case">
+    <a class="back" href={href(back.url)}>← {back.label}</a>
+    <h1>{data.title}</h1>
+    <p class="tagline">{data.tagline}</p>
+    {data.notice && <p class="notice">{data.notice}</p>}
+    <ProjectLinks project={project} />
+    <p class="meta">{data.when} · {data.stack.join(', ')}</p>
+
+    {
+      data.video && (
+        <video
+          class="media"
+          controls
+          playsinline
+          preload="none"
+          width="1920"
+          height="1080"
+          poster={data.poster ? href(data.poster) : undefined}
+          src={href(data.video)}
+        />
+      )
+    }
+    {
+      !data.video && data.cover && (
+        <a class="media shot" href={href(data.cover)} data-caption={data.coverAlt}>
+          <img src={href(data.cover)} alt={data.coverAlt ?? `${data.title} screenshot`} />
+        </a>
+      )
+    }
+
+    <Flow title={data.flowTitle} steps={data.flow} loops={data.flowLoops} />
+
+    <div class="prose case-body">
+      <Content />
+    </div>
+
+    {
+      data.shots.length > 0 && (
+        <section class="shots" aria-labelledby="shots">
+          <h2 id="shots">{data.shotsTitle}</h2>
+          <ul>
+            {data.shots.map((s) => (
+              <li class:list={{ tall: s.tall }}>
+                <a class="shot" href={href(s.src)} data-caption={s.alt}>
+                  <img src={href(s.src)} alt={s.alt} loading="lazy" />
+                </a>
+                <p>{s.alt}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      data.template && (
+        <p class="small template-note">
+          The demo and the code are a cleaned template of the real tool. The company, clients, people, tickets and
+          numbers in it are invented, and no real data or credentials were carried over.
+        </p>
+      )
+    }
+
+    <a class="back" href={href(back.url)}>← {back.label}</a>
+  </article>
+
+  <dialog class="viewer" aria-label="Screenshot">
+    <img alt="" />
+    <p class="viewer-caption"></p>
+    <div class="viewer-controls">
+      <button type="button" data-step="-1" aria-label="Previous screenshot">← Previous</button>
+      <button type="button" data-close>Close</button>
+      <button type="button" data-step="1" aria-label="Next screenshot">Next →</button>
+    </div>
+  </dialog>
+</Base>
+
+<script>
+  // Opens screenshots in a viewer on the page instead of navigating to the
+  // image file. Close with the button, the Escape key or a click outside.
+  const viewer = document.querySelector<HTMLDialogElement>('dialog.viewer');
+  const shots = [...document.querySelectorAll<HTMLAnchorElement>('a.shot')];
+  if (viewer && shots.length) {
+    const img = viewer.querySelector('img')!;
+    const caption = viewer.querySelector<HTMLElement>('.viewer-caption')!;
+    const steppers = viewer.querySelectorAll<HTMLButtonElement>('[data-step]');
+    let index = 0;
+
+    const show = (i: number) => {
+      index = (i + shots.length) % shots.length;
+      const a = shots[index];
+      img.src = a.href;
+      img.alt = a.dataset.caption ?? '';
+      caption.textContent = a.dataset.caption ?? '';
+    };
+    steppers.forEach((b) => (b.hidden = shots.length < 2));
+
+    shots.forEach((a, i) =>
+      a.addEventListener('click', (e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey) return;
+        e.preventDefault();
+        show(i);
+        viewer.showModal();
+      }),
+    );
+    viewer.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t === viewer || t.hasAttribute('data-close')) viewer.close();
+      const step = t.getAttribute('data-step');
+      if (step) show(index + Number(step));
+    });
+    viewer.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') show(index + 1);
+      if (e.key === 'ArrowLeft') show(index - 1);
+    });
+  }
+</script>

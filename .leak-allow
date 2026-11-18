@@ -1,0 +1,4 @@
+# The company website case study and the About line name the employer on purpose:
+# the site is public and it is on the resume.
+file:src/content/projects/company-website.md
+file:site.config.mjs

@@ -1,0 +1,51 @@
+---
+import site from '../../site.config.mjs';
+import { href } from '../lib/links';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  current?: 'work' | 'about';
+}
+const { title, description = site.description, current } = Astro.props;
+const fullTitle = title ? `${title} · ${site.name}` : `${site.name} · ${site.kicker}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(href('/og.png'), Astro.site);
+const github = site.githubUser ? `https://github.com/${site.githubUser}` : '';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="site-head wrap">
+      <a class="brand" href={href('/')}>{site.name}</a>
+      <nav aria-label="Main">
+        <a href={href('/')} aria-current={current === 'work' ? 'page' : undefined}>Work</a>
+        <a href={href('/about/')} aria-current={current === 'about' ? 'page' : undefined}>About</a>
+        {github && <a href={github} rel="me noopener">GitHub</a>}
+      </nav>
+    </header>
+    <main id="main" class="wrap">
+      <slot />
+    </main>
+    <footer class="site-foot wrap">
+      <p>© {new Date().getFullYear()} {site.name}. This site sets no cookies and does no tracking.</p>
+    </footer>
+  </body>
+</html>

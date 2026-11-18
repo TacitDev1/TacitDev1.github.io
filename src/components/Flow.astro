@@ -1,0 +1,25 @@
+---
+interface Props {
+  title: string;
+  steps: { step: string; note?: string }[];
+  loops?: boolean;
+}
+const { title, steps, loops = false } = Astro.props;
+---
+
+{
+  steps.length > 0 && (
+    <section class="flow-block" aria-label={title}>
+      <h2>{title}</h2>
+      <ol class="flow">
+        {steps.map((s) => (
+          <li>
+            <b>{s.step}</b>
+            {s.note && <span>{s.note}</span>}
+          </li>
+        ))}
+      </ol>
+      {loops && <p class="small">The last step feeds the first: each week's results shape the next week's plan.</p>}
+    </section>
+  )
+}
